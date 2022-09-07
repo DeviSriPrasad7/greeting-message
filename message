@@ -1,0 +1,3 @@
+module.exports = "Have a Great Day";
+const greetingMessage = require("../message/index.js");
+console.log(greetingMessage);
