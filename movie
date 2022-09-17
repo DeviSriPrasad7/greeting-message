@@ -1,0 +1,75 @@
+const express = require("express");
+const { open } = require("sqlite");
+const sqlite3 = require("sqlite3");
+const path = require("path");
+//
+const app = express();
+const dbPath = path.join(__dirname, "moviesData.db");
+let db = null;
+//
+const initializeDbAndServer = async () => {
+  try {
+    db = await open({
+      filename: dbPath,
+      driver: sqlite3.Database,
+    });
+    app.listen(3000, () => {
+      console.log("Server is Started");
+    });
+  } catch (e) {
+    console.log(`DB Error:${e.message}`);
+  }
+};
+initializeDbAndServer();
+//
+const createMovObj = (dbObj) => {
+  return {
+    movieId: dbObj.movie_id,
+    directorId: dbObj.director_id,
+    movieName: dbObj.movie_name,
+    leadActor: dbObj.lead_actor,
+  };
+};
+//
+const createDirObj = (dbObj) => {
+  return {
+    directorId: dbObj.director_d,
+    directorName: dbObj.director_name,
+  };
+};
+//get all movies #Api-1
+app.get("/movies/", async (request, response) => {
+  const getMovies = `
+    SELECT 
+    movie_name
+    FROM
+    movie;`;
+  const movies = await db.all(getMovies);
+  response.send(movies.map((mov) => createMovObj(mov)));
+});
+//enter new movie #Api-2
+app.post("/movies/", async (request, response) => {
+  const { directorId, movieName, leadActor } = request.body;
+  const movie = `
+    INSERT INTO 
+        movie (director_id,movie_name,lead_actor)
+    VALUES 
+        (${directorId},${movieName},${leadActor});`;
+  const movies = await db.run(movie);
+  response.send("Movie Successfully Added");
+});
+//get specific movie #Api-3
+app.get("/movies/:movieId/", async (request, response) => {
+  const { movieId } = request.params;
+  const getMovies = `
+  SELECT 
+  *
+  FROM
+    movie
+  WHERE
+    movie_id = ${movieId};`;
+  const moviesReceived = await db.get(getMovies);
+  response.send(createMovObj(moviesReceived));
+});
+//
+module.exports = app;
